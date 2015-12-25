@@ -22,33 +22,29 @@
       <h3>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h3>
 
-<p><a href="https://aws.amazon.com/ec2/run-command/">Amazon EC2 RunCommand</a> is a feature that allows you to administer a fleet of amazon instances by automating common administrative tasks like executing Shell scripts and commands on Linux. This is great if you want to run the exact same command on all the instances, for example, to install git on a fleet of unbuntu instances:</p>
+<p><a href="https://aws.amazon.com/ec2/run-command/">Amazon EC2 RunCommand</a> is a feature that allows you to manage a fleet of amazon instances by automating common administrative tasks like executing Shell scripts and commands on Linux. This is great if you want to run the same command on all the instances. For example, to install git on a fleet of unbuntu instances you would run:</p>
 
 <pre><code>sudo apt-get install git
 </code></pre>
 
-<p>However, one may want to run commands that behave differently depending on the instance. For example, if you are a researcher that wants to process certain datasets in parallel, it make little sense to make every instance do the exact same work. Instead, you'd want to personalize the command such that each instance operates on a different dataset. This idea is not new to parallel processing. For example, the <a href="https://en.wikipedia.org/wiki/Message_Passing_Interface">Message Passing Interface (MPI)</a> allows source code behaves differently depending on the processor index. </p>
+<p>However, one may want to run commands that behave differently depending on the instance. For example, if you want to process certain datasets in parallel, you probably want every instance to process a different dataset. This idea is not new to parallel processing. For example, the <a href="https://en.wikipedia.org/wiki/Message_Passing_Interface">Message Passing Interface (MPI)</a> allows each processor to have a different behaviour depending on the processor index. </p>
 
-<p>This page explains how to emulate the MPI behaviour on <a href="https://aws.amazon.com/ec2/run-command/">AWS RunCommand</a>. In other words, we want to run the same script on a fleet of EC2 instances, where the script behaves differently depending on an instance index. The instance index can be obtained as follows.</p>
+<p>This page explains how to emulate the MPI behaviour on <a href="https://aws.amazon.com/ec2/run-command/">AWS RunCommand</a>. In other words, we want each instance to have a numerical index. This way, we can run the same script on a fleet of EC2 instances, where the script behaves differently depending on the instance index. The instance index can be generated as follows.</p>
 
 <h3>
 <a id="how-to-assign-a-unique-index-to-every-instance" class="anchor" href="#how-to-assign-a-unique-index-to-every-instance" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to assign a unique index to every instance</h3>
 
-<p>Say we have a fleet of linux instances. Every instance in the fleet has an instance ID. The instance ID can be retrieved from METADATA as follows:</p>
+<p>Assume we have a fleet of EC2 linux instances. Every instance in the fleet already has an instance ID. The instance ID can be retrieved from METADATA as follows:</p>
 
 <p><code>
 curl -s http://169.254.169.254/latest/meta-data/instance-id
 </code></p>
 
-<p>The output will be something like this:</p>
+<p>The output will be something like this: <code>i-67a6a8a3</code></p>
 
-<p><code>
-i-67a6a8a3
-</code></p>
+<p>For our purpose, we also want each instance to have an index between 0 and size of fleet - 1. A simple way to do this is to create a script, say number.sh, which does <code>echo &lt;index&gt;</code> where index differs from instance to instance. This script has to be created once, then it can be used in all future commands. The script can be created manually, but for a large fleet we can use RunCommand itself to generate the number.sh script. </p>
 
-<p>For our purpose, instead of a string, we want each instance to have an index between 0 and size of fleet - 1. A simple way to do this is to create a script, say number.sh, which does <code>echo &lt;index&gt;</code> where index differs from instance to instance. This script has to be created once, then it can be used in future commands. This script can be created manually, but for a large fleet we can use RunCommand itself to generate the number.sh script. </p>
-
-<p>Assume we have two instances:</p>
+<p>Assume that our fleet has two instances:</p>
 
 <pre><code>i-67a6a8a3
 i-cea5ab0a
@@ -76,7 +72,7 @@ echo "echo $index" &gt; /number.sh
 chmod +x /number.sh
 </code></pre>
 
-<p>The above script has a mapping between instance IDs and numerical indices. When it runs, it converts the instance ID in its numerical index, then generates the number.sh script which simply echoes the index. The path of the script in this example is the root folder for simplicity.</p>
+<p>The above script has a mapping between instance IDs and numerical indices. When it runs, it converts the instance ID to its numerical index. It then generates the number.sh script which echoes the index. The path of the script in this example is the root folder (/) for simplicity.</p>
 
 <p>To test that the script was generated, we can run it via RunCommand:</p>
 
@@ -87,9 +83,9 @@ chmod +x /number.sh
 <p>The outputs should be 0 or 1 depending on the instance.</p>
 
 <h3>
-<a id="example-on-how-to-personalize-command-based-on-index" class="anchor" href="#example-on-how-to-personalize-command-based-on-index" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example on how to personalize command based on index</h3>
+<a id="how-to-personalize-command-based-on-index" class="anchor" href="#how-to-personalize-command-based-on-index" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to personalize command based on index</h3>
 
-<p>In this section, we will clone a git project, generate a random dataset, then run the program on the datasets. The catch is that every dataset will be generated by using the instance index as a random number generator seed. This way, every instance runs on a unique dataset.</p>
+<p>In this section, we will fetch a program from github, generate a random dataset, then run the program on the datasets. The catch is that every dataset will be generated by using the instance index as a random number generator seed. Thus, every instance runs on a unique dataset.</p>
 
 <p>For this example we will clone the git project <a href="https://github.com/mariusmni/qpms9">qpms9</a> which solves the <a href="https://en.wikipedia.org/wiki/Planted_motif_search">Planted Motif Search</a> problem. The problem itself is not important for our discussion. The project comes with a dataset generator. We will use the generator to create different datasets depending on the instance index. Then we will solve the problem on each dataset.</p>
 
@@ -145,7 +141,7 @@ t13,4-1.in
 <h3>
 <a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span class="octicon octicon-link"></span></a>Conclusion</h3>
 
-<p>This tutorial shows how to use Amazon EC2 RunCommand to execute commands on a fleet of EC2 instances such that a single command can behave differently depending on the instance. We achieve this by assigning a unique numerical index for each instance. This index can be used to personalize the command, similar to how we can personalize MPI code. The above was tested on an Amazon Linux and an Ubuntu instance, but the principle can be applied on any type of fleet, including a mixed linux/windows fleet.</p>
+<p>This tutorial showed how to run commands on a fleet of EC2 instances such that a single command behaves differently depending on the instance. We achieved this by assigning a unique numerical index for each instance. This index can be used to personalize the command, similar to how we can personalize MPI code. The above was tested on an Amazon Linux and an Ubuntu instances, but the principle can be applied on any fleet, including a mixed linux/windows fleet.</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/mariusmni/aws">Personalize AWS RunCommand</a> is maintained by <a href="https://github.com/mariusmni">mariusmni</a>.</span>
