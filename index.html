@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Personalize AWS RunCommand by mariusmni</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Personalize AWS RunCommand</h1>
+      <h2 class="project-tagline">How to personalize command to behave differently depending on instance</h2>
+      <a href="https://github.com/mariusmni/aws" class="btn">View on GitHub</a>
+      <a href="https://github.com/mariusmni/aws/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/mariusmni/aws/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h3>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p>This page explains how to run a single AWS RunCommand on multiple instances, the command behaving differently on each instance.</p>
+
+<p>If you are familiar with the Message Passing Interface (MPI) for parallel computation, you know that we run a single piece of code on all the processors. However, each processor has an index, therefore the code can execute differently depending on the processor index. For example, processor 0 can act as a master, and the rest as slaves.</p>
+
+<p>We want to emulate this behaviour for AWS RunCommand, namely, we want to execute a single script on a fleet of instances, but the actual code executed to differ depending on the instance. In other words, we want each instance to have an index.</p>
+
+<p>In the next section we make each instance have an index, then we go through an actual example of how the index can be used.</p>
+
+<h3>
+<a id="how-to-assign-an-index-to-every-instance" class="anchor" href="#how-to-assign-an-index-to-every-instance" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to assign an index to every instance</h3>
+
+<p>Say you have a fleet of linux instances. Every instance has an instance ID, which is a string. The instance ID can be retrieved from METADATA as follows:</p>
+
+<p><code>
+curl -s http://169.254.169.254/latest/meta-data/instance-id
+</code></p>
+
+<p>The output will be something like this:</p>
+
+<p><code>
+i-67a6a8a3
+</code></p>
+
+<p>However, for our purpose, we want to obtain an index number between 0 and size of the fleet - 1. A simple way to do this is to create a script, say number.sh, which simply does </p>
+
+<p><code>
+echo &lt;number&gt;
+</code></p>
+
+<p>Where number differs from instance to instance. Of course we can manually create this script on every instance, but we can also use RunCommand to generate the script, as follows. Assume we have two instances:</p>
+
+<pre><code>i-67a6a8a3
+i-cea5ab0a
+</code></pre>
+
+<p>We can run the following command to generate the number script:</p>
+
+<pre><code>#!/bin/bash
+
+# mapping between instance ID and index
+declare -A num
+num=(
+  [i-67a6a8a3]=0
+  [i-cea5ab0a]=1
+)
+
+# get instance ID of the current instance
+instanceID="`curl -s http://169.254.169.254/latest/meta-data/instance-id`"
+
+# get index for the current instance
+index=${num[$instanceID]}
+
+# generate number.sh script and make it executable
+echo "echo $index" &gt; /number.sh
+chmod +x /number.sh
+</code></pre>
+
+<p>To test that the script was generated, we can run it, again using RunCommand:</p>
+
+<p><code>
+/number.sh
+</code></p>
+
+<p>The outputs should be 0 or 1 depending on the instance.</p>
+
+<h3>
+<a id="example-on-how-to-use-the-index" class="anchor" href="#example-on-how-to-use-the-index" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example on how to use the index</h3>
+
+<p>For this example we will clone the git project <a href="https://github.com/mariusmni/qpms9">qpms9</a> which is a project for the <a href="https://en.wikipedia.org/wiki/Planted_motif_search">Planted Motif Search</a> problem. The problem itself is not important for our discussion. What matters is that the project comes with a dataset generator. We will use the generator to create different datasets depending on the instance. Then each instance will solve the problem on its dataset.</p>
+
+<p>To get and build the program we have to run the following via RunCommand:</p>
+
+<pre><code>git clone https://github.com/mariusmni/qpms9.git
+cd qpms9
+make -C qpms9 nompi
+make -C qpms9-data
+</code></pre>
+
+<p>with working dir <code>/tmp</code></p>
+
+<p>The above assumes that you have git, make and g++ installed. If not, you have to install them first using something like </p>
+
+<pre><code>sudo apt-get install git make g++
+</code></pre>
+
+<p>on ubuntu, or</p>
+
+<pre><code>sudo yum install git make gcc-c++
+</code></pre>
+
+<p>on amazon linux/redhat.</p>
+
+<p>Finally, we can generate a dataset and solve it. Run the following via RunCommand:</p>
+
+<pre><code>cd qpms9
+mkdir results
+n=`/number.sh`
+qpms9-data/Release/qpms9-data  -l 13 -d 4 -r $n -o results/t13,4-$n.in
+qpms9/NoMpi/qpms9 results/t13,4-$n.in -l 13 -d 4 i -o results/t13,4-$n.out
+</code></pre>
+
+<p>where the working dir is <code>/tmp</code>.</p>
+
+<p>Notice the </p>
+
+<pre><code>n=`/number.sh`
+</code></pre>
+
+<p>This sets the variable n to the index of the instance. The index is then passed to the dataset generator as a random number generator seed (<code>-r $n</code>) and is also used in the names of the input/output files.</p>
+
+<p>We can now save our results to amazon s3 via the following RunCommand command:</p>
+
+<pre><code>aws s3 sync qpms9/results s3://mariusmni-bucket/qpms
+</code></pre>
+
+<p>The bucket location should contain:</p>
+
+<pre><code>t13,4-0.in
+t13,4-0.out
+t13,4-1.in
+t13,4-1.in
+</code></pre>
+
+<p>which are the input and output files from our entire fleet.</p>
+
+<p>The above command requires the <a href="http://docs.aws.amazon.com/cli/latest/userguide/installing.html">AWS CLI</a> to be installed.</p>
+
+<h3>
+<a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span class="octicon octicon-link"></span></a>Conclusion</h3>
+
+<p>This tutorial shows how to run commands on a fleet of instances such that a single command can behave differently depending on the instance. We achieve this by assigning a unique numerical index for each instance, similar to how processors are assigned indices in MPI.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/mariusmni/aws">Personalize AWS RunCommand</a> is maintained by <a href="https://github.com/mariusmni">mariusmni</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
