@@ -1,33 +1,37 @@
-<!DOCTYPE html>
-<html lang="en-us">
+<!doctype html>
+<html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Personalize AWS RunCommand by mariusmni</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-    <section class="page-header">
-      <h1 class="project-name">Personalize AWS RunCommand</h1>
-      <h2 class="project-tagline">How to personalize command to behave differently depending on instance</h2>
-      <a href="https://github.com/mariusmni/aws" class="btn">View on GitHub</a>
-      <a href="https://github.com/mariusmni/aws/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/mariusmni/aws/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
+    <div class="wrapper">
+      <header>
+        <h1>Personalize AWS RunCommand</h1>
+        <p>How to assign numeric rank to instances in a fleet so that commands can behave differently depending on instance rank (similar to how MPI code can behave differently based on processor rank)</p>
 
-    <section class="main-content">
-      <h3>
+        <p class="view"><a href="https://github.com/mariusmni/aws">View the Project on GitHub <small>mariusmni/aws</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/mariusmni/aws/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/mariusmni/aws/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/mariusmni/aws">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h3>
 
-<p><a href="https://aws.amazon.com/ec2/run-command/">Amazon EC2 RunCommand</a> is a feature that allows you to manage a fleet of amazon instances by automating common administrative tasks like executing Shell scripts and commands on Linux. This is great if you want to run the same command on all the instances. For example, to install git on a fleet of unbuntu instances you would run:</p>
-
-<pre><code>sudo apt-get install git
-</code></pre>
-
-<p>However, one may want to run commands that behave differently depending on the instance. For example, if you want to process certain datasets in parallel, you probably want every instance to process a different dataset. This idea is not new to parallel processing. For example, the <a href="https://en.wikipedia.org/wiki/Message_Passing_Interface">Message Passing Interface (MPI)</a> allows each processor to have a different behaviour depending on the processor index. </p>
+<p><a href="https://aws.amazon.com/ec2/run-command/">Amazon EC2 RunCommand</a> is a feature that allows you to manage a fleet of amazon instances by automating common administrative tasks like executing Shell scripts and commands on Linux. This is great if you want to run the same command on all the instances. However, one may want to run commands that behave differently depending on the instance. For example, if you want to process certain datasets in parallel, you probably want every instance to process a different dataset. This idea is not new to parallel processing. For example, the <a href="https://en.wikipedia.org/wiki/Message_Passing_Interface">Message Passing Interface (MPI)</a> allows each processor to have a different behaviour depending on a processor rank or index. </p>
 
 <p>This page explains how to emulate the MPI behaviour on <a href="https://aws.amazon.com/ec2/run-command/">AWS RunCommand</a>. In other words, we want each instance to have a numerical index. This way, we can run the same script on a fleet of EC2 instances, where the script behaves differently depending on the instance index. The instance index can be generated as follows.</p>
 
@@ -142,15 +146,13 @@ t13,4-1.in
 <a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span class="octicon octicon-link"></span></a>Conclusion</h3>
 
 <p>This tutorial showed how to run commands on a fleet of EC2 instances such that a single command behaves differently depending on the instance. We achieved this by assigning a unique numerical index for each instance. This index can be used to personalize the command, similar to how we can personalize MPI code. The above was tested on an Amazon Linux and an Ubuntu instances, but the principle can be applied on any fleet, including a mixed linux/windows fleet.</p>
-
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/mariusmni/aws">Personalize AWS RunCommand</a> is maintained by <a href="https://github.com/mariusmni">mariusmni</a>.</span>
-
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/mariusmni">mariusmni</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
-
-    </section>
-
-  
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
   </body>
 </html>
