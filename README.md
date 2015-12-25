@@ -74,3 +74,49 @@ on amazon linux/redhat.
 
 
 To get and build the qpms9 program we have to run the following via RunCommand. For working dir use `/tmp`.
+
+```
+git clone https://github.com/mariusmni/qpms9.git
+cd qpms9
+make -C qpms9 nompi
+make -C qpms9-data
+```
+
+Now we generate a dataset and solve it. Execute the following via RunCommand, with the same working dir, `/tmp`:
+
+```
+cd qpms9
+mkdir results
+n=`/number.sh`
+qpms9-data/Release/qpms9-data  -l 13 -d 4 -r $n -o results/t13,4-$n.in
+qpms9/NoMpi/qpms9 results/t13,4-$n.in -l 13 -d 4 i -o results/t13,4-$n.out
+```
+
+Notice the
+
+```
+n=`/number.sh`
+```
+
+This sets the variable `n` to the index of the instance. The index is then passed to the dataset generator as a random number generator seed (`-r $n`) and is also used to generate the names of the input/output (`t13,4-$n.in`, `t13,4-$n.out`) files.
+
+
+If we have the [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/installing.html) installed, we can save our results to amazon s3 via the following RunCommand:
+
+```
+aws s3 sync qpms9/results s3://mariusmni-bucket/qpms
+```
+
+The bucket location will contain the input and output files from our entire fleet:
+
+```
+t13,4-0.in
+t13,4-0.out
+t13,4-1.in
+t13,4-1.in
+```
+
+
+### Conclusion
+
+This tutorial showed how to run commands on a fleet of EC2 instances such that a single command behaves differently depending on the instance. We achieved this by assigning a unique numerical index to every instance. This index can be used to personalize the command, similar to how we can personalize MPI code based on processor rank. The above was tested on a fleet containing one Amazon Linux and one Ubuntu instance. However, the principle can be applied on any fleet, including a mixed linux/windows fleet.
