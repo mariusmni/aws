@@ -46,7 +46,7 @@ curl -s http://169.254.169.254/latest/meta-data/instance-id
 
 <p>The output will be something like this: <code>i-67a6a8a3</code></p>
 
-<p>For our purpose, we also want each instance to have an index between 0 and size of fleet - 1. A simple way to do this is to create a script, say number.sh, which does <code>echo &lt;index&gt;</code> where index differs from instance to instance. This script has to be created once, then it can be used in all future commands. The script can be created manually, but for a large fleet we can use RunCommand itself to generate the number.sh script. </p>
+<p>For our purpose, we also want each instance to have an index between 0 and size of fleet - 1. A simple way to do this is to create a script, say number.sh, which does <code>echo &lt;index&gt;</code> where index differs from instance to instance. The script can be created manually, but for a large fleet we can use RunCommand itself to generate the <code>number.sh</code> script, as follows. </p>
 
 <p>Assume that our fleet has two instances:</p>
 
