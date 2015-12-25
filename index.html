@@ -48,7 +48,7 @@ curl -s http://169.254.169.254/latest/meta-data/instance-id
 
 <p>For our purpose, we want every instance to have an index between 0 and size of fleet - 1. A simple way to do this is to create a script, say <code>number.sh</code>, that does <code>echo &lt;index&gt;</code>, where index differs from instance to instance. The script can be created manually, but for a large fleet we can use RunCommand itself to generate the <code>number.sh</code> script, as follows. </p>
 
-<p>Assume, for simplicity, that our fleet has two instances:</p>
+<p>For this example, our fleet has only two instances:</p>
 
 <pre><code>i-67a6a8a3
 i-cea5ab0a
@@ -76,7 +76,7 @@ echo "echo $index" &gt; /number.sh
 chmod +x /number.sh
 </code></pre>
 
-<p>The above script has a mapping between instance IDs and numerical indices. When it runs, it converts the instance ID to its numerical index. It then generates the number.sh script which echoes the index. The path of the script in this example is the root folder (/) for simplicity.</p>
+<p>The above script has a mapping between instance IDs and numerical indices. When it runs, it converts the instance ID to its numerical index. It then generates the <code>number.sh</code> script which echoes the index. The path of the script in this example is the root folder (/) for simplicity.</p>
 
 <p>To test that the script was generated, we can run it via RunCommand:</p>
 
